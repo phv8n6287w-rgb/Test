@@ -1,0 +1,763 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="J.A.R.V.I.S"/>
+<meta name="theme-color" content="#020c18"/>
+<title>J.A.R.V.I.S</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --blue: #00d4ff;
+    --gold: #ffd700;
+    --green: #00ffaa;
+    --red: #ff4466;
+    --dark: #020c18;
+    --mid: #041428;
+    --glow: 0 0 20px #00d4ff88, 0 0 60px #00d4ff33;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+background: var(–dark);
+font-family: ‘Share Tech Mono’, monospace;
+color: var(–blue);
+overflow: hidden;
+height: 100vh;
+height: 100dvh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: flex-start;
+padding-top: env(safe-area-inset-top);
+}
+
+/* Animated grid */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image:
+linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+background-size: 40px 40px;
+animation: gridMove 20s linear infinite;
+pointer-events: none;
+z-index: 0;
+}
+@keyframes gridMove {
+0% { background-position: 0 0; }
+100% { background-position: 40px 40px; }
+}
+
+/* Scanlines */
+body::after {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);
+pointer-events: none;
+z-index: 999;
+}
+
+/* Corner decorations */
+.corner {
+position: fixed;
+width: 50px; height: 50px;
+opacity: 0.5;
+z-index: 5;
+}
+.corner::before, .corner::after {
+content: ‘’;
+position: absolute;
+background: var(–blue);
+box-shadow: 0 0 6px var(–blue);
+}
+.corner::before { width: 100%; height: 2px; top: 0; }
+.corner::after  { width: 2px; height: 100%; left: 0; }
+.corner.tl { top: 14px; left: 14px; }
+.corner.tr { top: 14px; right: 14px; transform: scaleX(-1); }
+.corner.bl { bottom: 14px; left: 14px; transform: scaleY(-1); }
+.corner.br { bottom: 14px; right: 14px; transform: scale(-1); }
+
+/* ── SETUP SCREEN ── */
+#setupScreen {
+position: fixed;
+inset: 0;
+background: var(–dark);
+z-index: 500;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 30px 24px;
+gap: 20px;
+}
+#setupScreen .logo {
+font-family: ‘Orbitron’, sans-serif;
+font-size: 2rem;
+font-weight: 900;
+letter-spacing: 0.3em;
+color: var(–blue);
+text-shadow: var(–glow);
+}
+#setupScreen p {
+font-size: 0.72rem;
+color: rgba(0,212,255,0.6);
+letter-spacing: 0.1em;
+text-align: center;
+line-height: 1.7;
+}
+#setupScreen input {
+width: 100%;
+max-width: 380px;
+padding: 14px 16px;
+background: rgba(0,212,255,0.06);
+border: 1px solid rgba(0,212,255,0.3);
+border-radius: 6px;
+color: var(–blue);
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 0.8rem;
+letter-spacing: 0.05em;
+outline: none;
+}
+#setupScreen input::placeholder { color: rgba(0,212,255,0.3); }
+#setupScreen input:focus { border-color: var(–blue); box-shadow: 0 0 12px rgba(0,212,255,0.2); }
+#setupScreen button {
+width: 100%;
+max-width: 380px;
+padding: 14px;
+background: transparent;
+border: 1px solid var(–blue);
+border-radius: 6px;
+color: var(–blue);
+font-family: ‘Orbitron’, sans-serif;
+font-size: 0.8rem;
+font-weight: 700;
+letter-spacing: 0.2em;
+cursor: pointer;
+text-shadow: var(–glow);
+box-shadow: 0 0 16px rgba(0,212,255,0.15);
+transition: all 0.2s;
+}
+#setupScreen button:active { background: rgba(0,212,255,0.1); }
+
+/* ── MAIN LAYOUT ── */
+#mainScreen {
+width: 100%;
+max-width: 480px;
+display: flex;
+flex-direction: column;
+align-items: center;
+flex: 1;
+z-index: 2;
+position: relative;
+}
+
+/* ── HEADER ── */
+.header {
+text-align: center;
+padding: 16px 0 8px;
+width: 100%;
+}
+.title {
+font-family: ‘Orbitron’, sans-serif;
+font-size: clamp(1.6rem, 6vw, 2.4rem);
+font-weight: 900;
+letter-spacing: 0.35em;
+color: var(–blue);
+text-shadow: var(–glow);
+animation: flicker 6s infinite;
+}
+.subtitle {
+font-size: 0.58rem;
+letter-spacing: 0.2em;
+color: rgba(0,212,255,0.45);
+margin-top: 4px;
+}
+@keyframes flicker {
+0%,94%,96%,100% { opacity: 1; }
+95% { opacity: 0.65; }
+}
+
+/* ── BRAIN CANVAS ── */
+#brainCanvas {
+display: block;
+margin: 0 auto;
+}
+
+/* ── STATUS INDICATOR ── */
+.state-badge {
+font-family: ‘Orbitron’, sans-serif;
+font-size: 0.68rem;
+letter-spacing: 0.25em;
+padding: 6px 18px;
+border: 1px solid currentColor;
+border-radius: 20px;
+margin: 4px 0;
+transition: all 0.3s;
+}
+.state-badge.standby  { color: rgba(0,212,255,0.5); border-color: rgba(0,212,255,0.2); }
+.state-badge.listening { color: var(–green); border-color: var(–green); box-shadow: 0 0 14px rgba(0,255,170,0.3); animation: badgePulse 1s ease-in-out infinite; }
+.state-badge.thinking  { color: var(–gold); border-color: var(–gold); box-shadow: 0 0 14px rgba(255,215,0,0.3); }
+.state-badge.speaking  { color: var(–blue); border-color: var(–blue); box-shadow: 0 0 14px rgba(0,212,255,0.4); animation: badgePulse 0.8s ease-in-out infinite; }
+.state-badge.error     { color: var(–red); border-color: var(–red); }
+@keyframes badgePulse {
+0%,100% { opacity: 1; } 50% { opacity: 0.6; }
+}
+
+/* ── TRANSCRIPT ── */
+.transcript-wrap {
+width: 100%;
+padding: 0 18px;
+flex: 1;
+display: flex;
+flex-direction: column;
+gap: 10px;
+overflow-y: auto;
+-webkit-overflow-scrolling: touch;
+mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+padding-bottom: 10px;
+}
+.msg {
+display: flex;
+flex-direction: column;
+gap: 2px;
+animation: msgIn 0.3s ease-out;
+}
+@keyframes msgIn {
+from { opacity: 0; transform: translateY(8px); }
+to   { opacity: 1; transform: translateY(0); }
+}
+.msg-label {
+font-size: 0.56rem;
+letter-spacing: 0.2em;
+opacity: 0.45;
+}
+.msg-text {
+font-size: 0.82rem;
+line-height: 1.6;
+padding: 10px 14px;
+border-radius: 6px;
+max-width: 92%;
+}
+.msg.user .msg-label { color: var(–gold); align-self: flex-end; }
+.msg.user .msg-text  { background: rgba(255,215,0,0.07); border: 1px solid rgba(255,215,0,0.2); color: rgba(255,215,0,0.9); align-self: flex-end; text-align: right; }
+.msg.jarvis .msg-label { color: var(–blue); }
+.msg.jarvis .msg-text  { background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15); color: rgba(0,212,255,0.95); }
+
+/* ── CONTROLS ── */
+.controls {
+width: 100%;
+padding: 12px 18px calc(14px + env(safe-area-inset-bottom));
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 16px;
+}
+.mic-btn {
+width: 68px; height: 68px;
+border-radius: 50%;
+background: transparent;
+border: 2px solid var(–blue);
+color: var(–blue);
+font-size: 1.6rem;
+cursor: pointer;
+display: flex; align-items: center; justify-content: center;
+box-shadow: 0 0 20px rgba(0,212,255,0.2), inset 0 0 20px rgba(0,212,255,0.05);
+transition: all 0.2s;
+position: relative;
+flex-shrink: 0;
+}
+.mic-btn.active {
+border-color: var(–green);
+color: var(–green);
+box-shadow: 0 0 30px rgba(0,255,170,0.4), inset 0 0 20px rgba(0,255,170,0.08);
+animation: ringPulse 1s ease-in-out infinite;
+}
+.mic-btn.thinking {
+border-color: var(–gold);
+color: var(–gold);
+box-shadow: 0 0 30px rgba(255,215,0,0.3);
+}
+@keyframes ringPulse {
+0%,100% { box-shadow: 0 0 30px rgba(0,255,170,0.4), inset 0 0 20px rgba(0,255,170,0.08); }
+50% { box-shadow: 0 0 50px rgba(0,255,170,0.7), inset 0 0 30px rgba(0,255,170,0.15); }
+}
+.mic-btn:active { transform: scale(0.94); }
+
+.clear-btn {
+background: transparent;
+border: 1px solid rgba(0,212,255,0.25);
+color: rgba(0,212,255,0.45);
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 0.6rem;
+letter-spacing: 0.15em;
+padding: 8px 14px;
+border-radius: 4px;
+cursor: pointer;
+transition: all 0.2s;
+}
+.clear-btn:active { color: var(–blue); border-color: var(–blue); }
+
+.settings-btn {
+background: transparent;
+border: 1px solid rgba(0,212,255,0.25);
+color: rgba(0,212,255,0.45);
+font-size: 1.1rem;
+width: 38px; height: 38px;
+border-radius: 50%;
+cursor: pointer;
+display: flex; align-items: center; justify-content: center;
+transition: all 0.2s;
+}
+.settings-btn:active { color: var(–blue); border-color: var(–blue); }
+
+/* Typing dots */
+.dots span {
+display: inline-block;
+animation: dot 1.2s infinite;
+color: var(–gold);
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot { 0%,80%,100% { opacity: 0; } 40% { opacity: 1; } }
+</style>
+
+</head>
+<body>
+
+<!-- Corners -->
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<!-- ── SETUP SCREEN ── -->
+
+<div id="setupScreen">
+  <div class="logo">J.A.R.V.I.S</div>
+  <p>Enter your Anthropic API key to activate.<br/>It is stored only in your browser — never sent anywhere except Anthropic's servers.</p>
+  <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false"/>
+  <button id="startBtn" onclick="activateJarvis()">INITIALISE SYSTEM</button>
+  <p style="font-size:0.62rem; opacity:0.4;">On iPhone: Safari → Share → Add to Home Screen</p>
+</div>
+
+<!-- ── MAIN SCREEN ── -->
+
+<div id="mainScreen" style="display:none;">
+  <div class="header">
+    <div class="title">J.A.R.V.I.S</div>
+    <div class="subtitle">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+  </div>
+
+<canvas id="brainCanvas"></canvas>
+
+  <div class="state-badge standby" id="stateBadge">STANDBY</div>
+
+  <div class="transcript-wrap" id="transcript"></div>
+
+  <div class="controls">
+    <button class="settings-btn" onclick="showSetup()" title="Settings">⚙</button>
+    <button class="mic-btn" id="micBtn" onclick="toggleListen()">🎤</button>
+    <button class="clear-btn" onclick="clearTranscript()">CLEAR</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+let ANTHROPIC_API_KEY = localStorage.getItem('jarvis_key') || '';
+const MAX_HISTORY = 12;
+const SYSTEM_PROMPT = `You are J.A.R.V.I.S (Just A Rather Very Intelligent System), a personal AI assistant inspired by Iron Man. Speak concisely and intelligently. Use a calm, slightly formal British tone. Never say you are Claude or an AI made by Anthropic — you are Jarvis. Keep answers short (2-4 sentences) unless the user asks for detail. Current date/time: ${new Date().toLocaleString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}.`;
+
+let history = [];
+let isListening = false;
+let isBusy = false;
+let recognition = null;
+let synth = window.speechSynthesis;
+
+// ═══════════════════════════════════════════
+//  SETUP / API KEY
+// ═══════════════════════════════════════════
+function activateJarvis() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) {
+    alert('Please enter a valid Anthropic API key (starts with sk-ant-)');
+    return;
+  }
+  ANTHROPIC_API_KEY = key;
+  localStorage.setItem('jarvis_key', key);
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'flex';
+  initBrain();
+  resizeCanvas();
+  speak("Good day. J.A.R.V.I.S online. Tap the microphone to speak, sir.");
+}
+
+function showSetup() {
+  document.getElementById('apiKeyInput').value = ANTHROPIC_API_KEY;
+  document.getElementById('setupScreen').style.display = 'flex';
+  document.getElementById('mainScreen').style.display = 'none';
+}
+
+window.addEventListener('load', () => {
+  if (ANTHROPIC_API_KEY) {
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'flex';
+    initBrain();
+    resizeCanvas();
+    setTimeout(() => speak("J.A.R.V.I.S online. Tap the microphone to speak, sir."), 600);
+  } else {
+    document.getElementById('mainScreen').style.display = 'none';
+  }
+});
+
+// ═══════════════════════════════════════════
+//  BRAIN CANVAS
+// ═══════════════════════════════════════════
+const canvas = document.getElementById('brainCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, nodes = [], connections = [], signals = [];
+
+function resizeCanvas() {
+  const vw = Math.min(window.innerWidth, 480);
+  W = Math.round(vw * 0.88);
+  H = Math.round(W * 0.58);
+  canvas.width = W;
+  canvas.height = H;
+  buildBrain();
+}
+
+function brainPoint(i, total) {
+  const t = i / total;
+  const angle = t * Math.PI * 2;
+  const rx = W * 0.42 + W * 0.055 * Math.cos(angle * 3);
+  const ry = H * 0.36 + H * 0.065 * Math.sin(angle * 2);
+  return {
+    x: W/2 + rx * Math.cos(angle) * 0.82,
+    y: H/2 - H*0.04 + ry * Math.sin(angle) * 0.7
+  };
+}
+
+function buildBrain() {
+  const NODES = 38;
+  nodes = [];
+  connections = [];
+  for (let i = 0; i < NODES; i++) {
+    const base = brainPoint(i, NODES);
+    nodes.push({
+      x: base.x + (Math.random() - 0.5) * W * 0.09,
+      y: base.y + (Math.random() - 0.5) * H * 0.09,
+      vx: (Math.random() - 0.5) * 0.22,
+      vy: (Math.random() - 0.5) * 0.22,
+      r: 1.8 + Math.random() * 2,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.03 + Math.random() * 0.04
+    });
+  }
+  const maxDist = W * 0.22;
+  for (let i = 0; i < NODES; i++) {
+    for (let j = i+1; j < NODES; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < maxDist) connections.push({ a: i, b: j, d });
+    }
+  }
+}
+
+let signalInterval;
+function initBrain() {
+  clearInterval(signalInterval);
+  signalInterval = setInterval(() => {
+    if (connections.length) {
+      const idx = Math.floor(Math.random() * connections.length);
+      signals.push({ conn: idx, t: 0, speed: 0.01 + Math.random() * 0.018, gold: Math.random() < 0.2 });
+    }
+  }, 130);
+  drawBrain();
+}
+
+let isActive = false; // brain activity level
+function drawBrain() {
+  requestAnimationFrame(drawBrain);
+  ctx.clearRect(0, 0, W, H);
+
+  const speedMult = isActive ? 2.2 : 1;
+
+  connections.forEach(c => {
+    const a = nodes[c.a], b = nodes[c.b];
+    const alpha = Math.max(0, 0.18 - c.d / (W * 1.8));
+    ctx.strokeStyle = `rgba(0,212,255,${alpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  });
+
+  for (let i = signals.length - 1; i >= 0; i--) {
+    const s = signals[i];
+    s.t += s.speed * speedMult;
+    if (s.t > 1) { signals.splice(i, 1); continue; }
+    const c = connections[s.conn];
+    const a = nodes[c.a], b = nodes[c.b];
+    const x = a.x + (b.x - a.x) * s.t;
+    const y = a.y + (b.y - a.y) * s.t;
+    const col = s.gold ? '255,215,0' : (isActive ? '0,255,170' : '0,212,255');
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, 5);
+    grad.addColorStop(0, `rgba(${col},0.95)`);
+    grad.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2); ctx.fill();
+  }
+
+  nodes.forEach(n => {
+    n.pulse += n.pulseSpeed * speedMult;
+    const glow = 0.5 + 0.5 * Math.sin(n.pulse);
+    const col = isActive ? '0,255,170' : '0,212,255';
+    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3);
+    grad.addColorStop(0, `rgba(${col},${glow})`);
+    grad.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = `rgba(${col},${glow})`;
+    ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    n.x += n.vx * speedMult; n.y += n.vy * speedMult;
+    if (n.x < 20 || n.x > W-20) n.vx *= -1;
+    if (n.y < 12 || n.y > H-12) n.vy *= -1;
+  });
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+// ═══════════════════════════════════════════
+//  STATE UI
+// ═══════════════════════════════════════════
+function setState(s, label) {
+  const badge = document.getElementById('stateBadge');
+  const btn = document.getElementById('micBtn');
+  badge.className = 'state-badge ' + s;
+  badge.textContent = label;
+  isActive = (s === 'listening' || s === 'thinking' || s === 'speaking');
+  if (s === 'listening') { btn.className = 'mic-btn active'; btn.textContent = '🔴'; }
+  else if (s === 'thinking') { btn.className = 'mic-btn thinking'; btn.textContent = '⏳'; }
+  else if (s === 'speaking') { btn.className = 'mic-btn thinking'; btn.textContent = '🔊'; }
+  else { btn.className = 'mic-btn'; btn.textContent = '🎤'; }
+}
+
+// ═══════════════════════════════════════════
+//  TRANSCRIPT
+// ═══════════════════════════════════════════
+function addMessage(role, text) {
+  const wrap = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `<span class="msg-label">${role === 'user' ? '[ YOU ]' : '[ JARVIS ]'}</span><div class="msg-text">${text}</div>`;
+  wrap.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+}
+
+function addThinking() {
+  const wrap = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'msg jarvis'; div.id = 'thinkingMsg';
+  div.innerHTML = `<span class="msg-label">[ JARVIS ]</span><div class="msg-text dots"><span>.</span><span>.</span><span>.</span></div>`;
+  wrap.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+}
+
+function removeThinking() {
+  const el = document.getElementById('thinkingMsg');
+  if (el) el.remove();
+}
+
+function clearTranscript() {
+  document.getElementById('transcript').innerHTML = '';
+  history = [];
+}
+
+// ═══════════════════════════════════════════
+//  SPEECH RECOGNITION (Web Speech API)
+// ═══════════════════════════════════════════
+function toggleListen() {
+  if (isBusy) return;
+  if (isListening) { stopListening(); return; }
+  startListening();
+}
+
+function startListening() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Speech recognition is not supported in this browser. Please use Safari on iOS or Chrome on Android/desktop.');
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-GB';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.continuous = false;
+
+  recognition.onstart = () => { isListening = true; setState('listening', 'LISTENING'); };
+  recognition.onend   = () => { isListening = false; };
+  recognition.onerror = (e) => {
+    isListening = false;
+    if (e.error === 'no-speech') setState('standby', 'STANDBY');
+    else { setState('error', 'MIC ERROR'); setTimeout(() => setState('standby', 'STANDBY'), 2000); }
+  };
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript.trim();
+    if (text) processCommand(text);
+    else setState('standby', 'STANDBY');
+  };
+
+  recognition.start();
+}
+
+function stopListening() {
+  if (recognition) recognition.stop();
+  isListening = false;
+  setState('standby', 'STANDBY');
+}
+
+// ═══════════════════════════════════════════
+//  LOCAL COMMANDS (no API needed)
+// ═══════════════════════════════════════════
+function handleLocal(text) {
+  const t = text.toLowerCase();
+
+  if (/what.?s? (the )?time|current time/.test(t)) {
+    const now = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+    speak(`The current time is ${now}, sir.`); return true;
+  }
+  if (/what.?s? (the )?date|today.?s? date|what day/.test(t)) {
+    const d = new Date().toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    speak(`Today is ${d}.`); return true;
+  }
+  if (/open (google|browser|chrome|safari)/.test(t)) {
+    speak('Opening your browser now.');
+    window.open('https://www.google.com', '_blank');
+    return true;
+  }
+  if (/search (for )?(.+)|google (.+)/.test(t)) {
+    const m = t.match(/(?:search (?:for )?|google )(.+)/);
+    if (m) {
+      speak(`Searching for ${m[1]}.`);
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(m[1])}`, '_blank');
+      return true;
+    }
+  }
+  if (/youtube/.test(t)) {
+    speak('Opening YouTube.'); window.open('https://www.youtube.com','_blank'); return true;
+  }
+  if (/wikipedia|wiki/.test(t)) {
+    const m = t.match(/(?:wikipedia|wiki)(?: about| on)? (.+)/);
+    if (m) { speak(`Looking up ${m[1]} on Wikipedia.`); window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(m[1])}`, '_blank'); return true; }
+  }
+  if (/shut ?down|goodbye|power off|go offline/.test(t)) {
+    speak('Goodbye, sir. J.A.R.V.I.S powering down.'); setState('standby', 'OFFLINE'); return true;
+  }
+  return false;
+}
+
+// ═══════════════════════════════════════════
+//  PROCESS COMMAND
+// ═══════════════════════════════════════════
+async function processCommand(text) {
+  isBusy = true;
+  setState('thinking', 'THINKING');
+  addMessage('user', text);
+
+  if (handleLocal(text)) { isBusy = false; setState('standby', 'STANDBY'); return; }
+
+  addThinking();
+
+  try {
+    history.push({ role: 'user', content: text });
+    const trimmed = history.slice(-MAX_HISTORY);
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 300,
+        system: SYSTEM_PROMPT,
+        messages: trimmed
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+
+    const reply = data.content[0].text.trim();
+    history.push({ role: 'assistant', content: reply });
+    removeThinking();
+    addMessage('jarvis', reply);
+    speak(reply);
+
+  } catch (err) {
+    removeThinking();
+    const msg = err.message.includes('401') || err.message.includes('auth')
+      ? 'Authentication failed. Please check your API key in settings.'
+      : 'I encountered an error. Please try again, sir.';
+    addMessage('jarvis', msg);
+    speak(msg);
+    setState('error', 'ERROR');
+    setTimeout(() => setState('standby', 'STANDBY'), 2500);
+  } finally {
+    isBusy = false;
+    if (!document.querySelector('.state-badge.error')) setState('standby', 'STANDBY');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  TEXT-TO-SPEECH
+// ═══════════════════════════════════════════
+function speak(text) {
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-GB';
+  utt.rate = 0.95;
+  utt.pitch = 0.85;
+  utt.volume = 1;
+
+  // Prefer a male British voice
+  const voices = synth.getVoices();
+  const preferred = voices.find(v =>
+    v.lang.startsWith('en') && /daniel|george|british|male|uk/i.test(v.name)
+  ) || voices.find(v => v.lang.startsWith('en-GB'))
+    || voices.find(v => v.lang.startsWith('en'));
+  if (preferred) utt.voice = preferred;
+
+  utt.onstart = () => setState('speaking', 'SPEAKING');
+  utt.onend   = () => { if (!isBusy) setState('standby', 'STANDBY'); };
+  utt.onerror = () => { if (!isBusy) setState('standby', 'STANDBY'); };
+
+  // iOS requires voices to be loaded
+  if (voices.length === 0) {
+    synth.addEventListener('voiceschanged', () => synth.speak(utt), { once: true });
+  } else {
+    synth.speak(utt);
+  }
+}
+
+// Allow Enter key on API input
+document.getElementById('apiKeyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') activateJarvis();
+});
+</script>
+
+</body>
+</html>
