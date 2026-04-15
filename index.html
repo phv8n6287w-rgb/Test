@@ -1,133 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>JARVIS</title>
-<style>
-body {
-  background:#020c18;
-  color:#00d4ff;
-  font-family: monospace;
-  text-align:center;
-}
-button {
-  padding:20px;
-  font-size:20px;
-  margin-top:40px;
-}
-</style>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JARVIS</title>
 
-<body>
+    <style>
+      body {
+        background: #020c18;
+        color: #00d4ff;
+        font-family: monospace;
+        text-align: center;
+        overflow: hidden;
+      }
 
-<h1>J.A.R.V.I.S</h1>
-<button onclick="toggleListen()">🎤 Speak</button>
+      /* HUD frame */
+      .hud {
+        position: relative;
+        border: 1px solid rgba(0, 212, 255, 0.4);
+        padding: 40px;
+        margin: 40px;
+        box-shadow:
+          0 0 20px rgba(0, 212, 255, 0.6),
+          inset 0 0 30px rgba(0, 212, 255, 0.2);
+      }
 
-<script>
-let isListening = false;
-let isBusy = false;
-let mediaRecorder;
-let audioChunks = [];
-let streamRef = null;
+      /* scanlines */
+      .hud::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(0, 255, 255, 0.05),
+          rgba(0, 255, 255, 0.05) 1px,
+          transparent 2px
+        );
+        pointer-events: none;
+      }
 
-// ====== WHISPER ======
-async function sendToWhisper(blob) {
-  const formData = new FormData();
-  formData.append("file", blob, "audio.webm");
+      /* rotating ring */
+      .ring {
+        width: 150px;
+        height: 150px;
+        border: 2px solid rgba(0, 212, 255, 0.5);
+        border-radius: 50%;
+        margin: 20px auto;
+        animation: rotate 6s linear infinite;
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
+      }
 
-  const res = await fetch("/api/transcribe", {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await res.json();
-  return data.text;
-}
-
-// ====== START LISTEN ======
-async function startListening() {
-  if (isBusy) return;
-
-  try {
-    streamRef = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    mediaRecorder = new MediaRecorder(streamRef);
-    audioChunks = [];
-
-    mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) audioChunks.push(e.data);
-    };
-
-    mediaRecorder.onstart = () => {
-      isListening = true;
-      console.log("Listening...");
-    };
-
-    mediaRecorder.onstop = async () => {
-      isListening = false;
-      isBusy = true;
-
-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
-
-      try {
-        const text = await sendToWhisper(blob);
-        console.log("You said:", text);
-
-        if (text) {
-          speak("You said " + text);
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
         }
-
-      } catch (err) {
-        console.error(err);
-        speak("Error processing audio");
+        to {
+          transform: rotate(360deg);
+        }
       }
 
-      if (streamRef) {
-        streamRef.getTracks().forEach(t => t.stop());
+      /* pulse when listening */
+      .listening {
+        animation: pulse 1s infinite;
       }
 
-      isBusy = false;
-    };
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 10px #00d4ff;
+        }
+        50% {
+          box-shadow: 0 0 30px #00d4ff;
+        }
+        100% {
+          box-shadow: 0 0 10px #00d4ff;
+        }
+      }
 
-    mediaRecorder.start();
+      button {
+        padding: 20px;
+        font-size: 20px;
+        margin-top: 40px;
+        background: black;
+        color: #00d4ff;
+        border: 1px solid #00d4ff;
+      }
+    </style>
+  </head>
 
-  } catch (err) {
-    alert("Mic not allowed or not supported");
-  }
-}
+  <body>
+    <div class="hud">
+      <h1>J.A.R.V.I.S</h1>
 
-// ====== STOP LISTEN ======
-function stopListening() {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-  }
-}
+      <div id="ring" class="ring"></div>
 
-// ====== BUTTON ======
-function toggleListen() {
-  if (isBusy) return;
+      <button onclick="toggleListen()">🎤 Speak</button>
 
-  if (!isListening) {
-    startListening();
+      <p id="status">System idle</p>
+    </div>
 
-    // auto stop after 5 sec
-    setTimeout(() => {
-      if (isListening) stopListening();
-    }, 5000);
+    <script>
+      let isListening = false;
+      let isBusy = false;
+      let mediaRecorder;
+      let audioChunks = [];
+      let streamRef = null;
 
-  } else {
-    stopListening();
-  }
-}
+      // ====== WHISPER ======
+      async function sendToWhisper(blob) {
+        const formData = new FormData();
+        formData.append("file", blob, "audio.webm");
 
-// ====== SPEAK ======
-function speak(text) {
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-GB";
-  speechSynthesis.speak(utter);
-}
-</script>
+        const res = await fetch("/api/transcribe", {
+          method: "POST",
+          body: formData
+        });
 
-</body>
+        const data = await res.json();
+        return data.text;
+      }
+
+      // ====== START LISTEN ======
+      async function startListening() {
+        if (isBusy) return;
+
+        try {
+          streamRef = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+          mediaRecorder = new MediaRecorder(streamRef);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstart = () => {
+            isListening = true;
+            console.log("Listening...");
+            document.getElementById("status").innerText = "Listening...";
+            document.getElementById("ring").classList.add("listening");
+          };
+
+          mediaRecorder.onstop = async () => {
+            isListening = false;
+            document.getElementById("ring").classList.remove("listening");
+
+            isBusy = true;
+
+            const blob = new Blob(audioChunks, { type: "audio/webm" });
+
+            try {
+              const text = await sendToWhisper(blob);
+              console.log("You said:", text);
+
+              if (text) {
+                const lower = text.toLowerCase();
+
+                if (lower.includes("ciao jarvis")) {
+                  speak("Ciao. Sistemi attivi. In cosa posso aiutarti?");
+                  document.getElementById("status").innerText = "Jarvis activated";
+                } else {
+                  speak("Hai detto " + text);
+                  document.getElementById("status").innerText = text;
+                }
+              }
+            } catch (err) {
+              console.error(err);
+              speak("Errore audio");
+            }
+
+            if (streamRef) {
+              streamRef.getTracks().forEach((t) => t.stop());
+            }
+
+            isBusy = false;
+          };
+
+          mediaRecorder.start();
+        } catch (err) {
+          alert("Mic not allowed or not supported");
+        }
+      }
+
+      // ====== STOP LISTEN ======
+      function stopListening() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
+      }
+
+      // ====== BUTTON ======
+      function toggleListen() {
+        if (isBusy) return;
+
+        if (!isListening) {
+          startListening();
+
+          // auto stop after 5 sec
+          setTimeout(() => {
+            if (isListening) stopListening();
+          }, 5000);
+        } else {
+          stopListening();
+        }
+      }
+
+      // ====== SPEAK ======
+      function speak(text) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "it-IT";
+        utter.pitch = 0.9;
+        utter.rate = 0.9;
+        speechSynthesis.speak(utter);
+      }
+    </script>
+  </body>
 </html>
